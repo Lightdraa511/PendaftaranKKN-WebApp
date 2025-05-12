@@ -57,9 +57,20 @@
 
           <div class="flex justify-end">
             @if($loc->status != 'penuh')
-              <a href="{{ route('lokasi.show', $loc->id) }}" class="btn btn-primary text-sm py-1.5 px-3">
+              <button
+                type="button"
+                class="btn btn-primary text-sm py-1.5 px-3 detail-button"
+                data-id="{{ $loc->id }}"
+                data-nama="{{ $loc->nama_lokasi }}"
+                data-alamat="{{ $loc->kecamatan }}, {{ $loc->kabupaten }}, {{ $loc->provinsi }}"
+                data-status="{{ $loc->status }}"
+                data-koordinator="{{ $loc->koordinator }}"
+                data-kontak="{{ $loc->kontak_koordinator }}"
+                data-deskripsi="{{ $loc->deskripsi }}"
+                data-kuota="{{ $loc->kuota_terisi }}/{{ $loc->kuota_total }}"
+              >
                 <i class="fas fa-info-circle mr-1.5"></i>Detail
-              </a>
+              </button>
             @else
               <button class="btn btn-outline text-sm py-1.5 px-3 opacity-75 cursor-not-allowed">
                 <i class="fas fa-info-circle mr-1.5"></i>Detail
@@ -97,7 +108,7 @@
           <div class="mb-4 space-y-2">
             <div class="flex items-center">
               <span class="w-28 text-sm text-gray-600 dark:text-gray-400">Status:</span>
-              <span id="modal-location-status" class="px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 rounded-full">
+              <span id="modal-location-status" class="px-2 py-1 text-xs font-medium rounded-full">
                 Tersedia
               </span>
             </div>
@@ -122,7 +133,19 @@
         <div>
           <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Kuota per Fakultas</h4>
           <div class="space-y-3" id="modal-faculty-quotas">
-            <!-- Kuota fakultas akan diisi oleh JavaScript -->
+            @foreach($fakultas as $fak)
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <div class="flex items-center">
+                  <span class="text-sm font-medium text-gray-800 dark:text-gray-300">{{ $fak->nama_fakultas }}</span>
+                </div>
+                <span class="text-xs text-gray-600 dark:text-gray-400" id="quota-faculty-{{ $fak->id }}">0/0</span>
+              </div>
+              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div class="bg-blue-600 h-2 rounded-full" id="quota-bar-faculty-{{ $fak->id }}" style="width: 0%"></div>
+              </div>
+            </div>
+            @endforeach
           </div>
         </div>
       </div>
@@ -138,7 +161,7 @@
 
       <!-- Daftar Mahasiswa Yang Sudah Mendaftar -->
       <div class="mt-6">
-        <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Daftar Mahasiswa</h4>
+        <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Daftar Mahasiswa <span id="modal-student-count"></span></h4>
         <div class="border rounded-lg overflow-hidden">
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -151,6 +174,9 @@
               </thead>
               <tbody id="modal-student-list" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 <!-- List mahasiswa akan diisi oleh JavaScript -->
+                <tr>
+                  <td colspan="3" class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-center">Memuat data...</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -185,94 +211,127 @@
     }
 
     // Detail button functionality
-    const detailButtons = document.querySelectorAll('.btn-primary');
+    const detailButtons = document.querySelectorAll('.detail-button');
     const locationDetailModal = document.getElementById('location-detail-modal');
     const closeModalBtn = document.getElementById('close-modal');
 
     detailButtons.forEach(button => {
-      button.addEventListener('click', function(e) {
-        if (!button.href) return;
-        e.preventDefault();
+      button.addEventListener('click', function() {
+        // Ambil data dari atribut data-*
+        const id = this.getAttribute('data-id');
+        const nama = this.getAttribute('data-nama');
+        const alamat = this.getAttribute('data-alamat');
+        const status = this.getAttribute('data-status');
+        const koordinator = this.getAttribute('data-koordinator');
+        const kontak = this.getAttribute('data-kontak');
+        const deskripsi = this.getAttribute('data-deskripsi');
 
-        // Fetch location details via AJAX
-        fetch(button.href)
+        // Isi data ke modal
+        document.getElementById('modal-location-name').textContent = nama;
+        document.getElementById('modal-location-address').textContent = alamat;
+        document.getElementById('modal-coordinator').textContent = koordinator;
+        document.getElementById('modal-coordinator-contact').textContent = kontak;
+        document.getElementById('modal-location-description').textContent = deskripsi;
+
+        // Update status class
+        const statusElement = document.getElementById('modal-location-status');
+        statusElement.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+
+        // Remove all classes first
+        statusElement.className = 'px-2 py-1 text-xs font-medium rounded-full';
+
+        // Add class based on status
+        if (status === 'tersedia') {
+          statusElement.classList.add('bg-green-100', 'dark:bg-green-900', 'text-green-800', 'dark:text-green-300');
+        } else if (status === 'terbatas') {
+          statusElement.classList.add('bg-yellow-100', 'dark:bg-yellow-900', 'text-yellow-800', 'dark:text-yellow-300');
+        } else {
+          statusElement.classList.add('bg-red-100', 'dark:bg-red-900', 'text-red-800', 'dark:text-red-300');
+        }
+
+        // Update form action
+        document.getElementById('select-location-form').action = "{{ url('lokasi') }}/" + id + "/select";
+
+        // Reset semua kuota fakultas ke 0/0
+        const fakultasEls = document.querySelectorAll('[id^="quota-faculty-"]');
+        fakultasEls.forEach(el => {
+          el.textContent = "0/0";
+        });
+
+        const fakultasBarEls = document.querySelectorAll('[id^="quota-bar-faculty-"]');
+        fakultasBarEls.forEach(el => {
+          el.style.width = "0%";
+        });
+
+        // Reset daftar mahasiswa
+        document.getElementById('modal-student-list').innerHTML = `
+          <tr>
+            <td colspan="3" class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-center">Memuat data...</td>
+          </tr>
+        `;
+
+        // Fetch kuota fakultas dan mahasiswa terdaftar
+        fetch('{{ url("lokasi") }}/' + id + '/detail')
           .then(response => response.json())
           .then(data => {
-            // Fill in modal content
-            document.getElementById('modal-title').textContent = 'Detail Lokasi KKNM';
-            document.getElementById('modal-location-name').textContent = data.lokasi.nama_lokasi;
-            document.getElementById('modal-location-address').textContent = `${data.lokasi.kecamatan}, ${data.lokasi.kabupaten}, ${data.lokasi.provinsi}`;
-            document.getElementById('modal-coordinator').textContent = data.lokasi.koordinator;
-            document.getElementById('modal-coordinator-contact').textContent = data.lokasi.kontak_koordinator;
-            document.getElementById('modal-location-description').textContent = data.lokasi.deskripsi;
+            console.log("Data from server:", data); // Debug log
 
-            // Update status class
-            const statusElement = document.getElementById('modal-location-status');
-            statusElement.textContent = data.lokasi.status.charAt(0).toUpperCase() + data.lokasi.status.slice(1);
+            // Fill kuota fakultas
+            if (data.kuota_fakultas && data.kuota_fakultas.length > 0) {
+              data.kuota_fakultas.forEach(kuota => {
+                const quotaElement = document.getElementById('quota-faculty-' + kuota.fakultas_id);
+                const barElement = document.getElementById('quota-bar-faculty-' + kuota.fakultas_id);
 
-            // Remove all classes first
-            statusElement.className = 'px-2 py-1 text-xs font-medium rounded-full';
-
-            // Add class based on status
-            if (data.lokasi.status === 'tersedia') {
-              statusElement.classList.add('bg-green-100', 'dark:bg-green-900', 'text-green-800', 'dark:text-green-300');
-            } else if (data.lokasi.status === 'terbatas') {
-              statusElement.classList.add('bg-yellow-100', 'dark:bg-yellow-900', 'text-yellow-800', 'dark:text-yellow-300');
-            } else {
-              statusElement.classList.add('bg-red-100', 'dark:bg-red-900', 'text-red-800', 'dark:text-red-300');
+                if (quotaElement && barElement) {
+                  quotaElement.textContent = kuota.terisi + '/' + kuota.kuota;
+                  barElement.style.width = (kuota.terisi / kuota.kuota * 100) + '%';
+                }
+              });
             }
 
-            // Fill in kuota fakultas
-            const kuotaContainer = document.getElementById('modal-faculty-quotas');
-            kuotaContainer.innerHTML = '';
-
-            data.kuotaFakultas.forEach(kuota => {
-              const percentage = (kuota.terisi / kuota.kuota) * 100;
-              const kuotaDiv = document.createElement('div');
-              kuotaDiv.innerHTML = `
-                <div class="flex justify-between items-center mb-1">
-                  <div class="flex items-center">
-                    <span class="text-sm font-medium text-gray-800 dark:text-gray-300">${kuota.fakultas.nama_fakultas}</span>
-                  </div>
-                  <span class="text-xs text-gray-600 dark:text-gray-400">${kuota.terisi}/${kuota.kuota}</span>
-                </div>
-                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div class="bg-blue-600 h-2 rounded-full" style="width: ${percentage}%"></div>
-                </div>
-              `;
-              kuotaContainer.appendChild(kuotaDiv);
-            });
-
-            // Fill in student list
+            // Fill student list
             const studentListContainer = document.getElementById('modal-student-list');
+            const studentCountSpan = document.getElementById('modal-student-count');
             studentListContainer.innerHTML = '';
 
-            if (data.mahasiswaTerdaftar && data.mahasiswaTerdaftar.length > 0) {
-              data.mahasiswaTerdaftar.forEach(mhs => {
+            if (data.mahasiswa && data.mahasiswa.length > 0) {
+              studentCountSpan.textContent = '(' + data.mahasiswa.length + '/' + data.lokasi.kuota_total + ')';
+
+              data.mahasiswa.forEach(mhs => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                   <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${mhs.nama_lengkap}</td>
                   <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${mhs.nim}</td>
-                  <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${mhs.fakultas.nama_fakultas}</td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">${mhs.fakultas_nama}</td>
                 `;
                 studentListContainer.appendChild(tr);
               });
             } else {
+              studentCountSpan.textContent = '(0/' + data.lokasi.kuota_total + ')';
               const tr = document.createElement('tr');
               tr.innerHTML = `
                 <td colspan="3" class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-center">Belum ada mahasiswa yang terdaftar</td>
               `;
               studentListContainer.appendChild(tr);
             }
-
-            // Update form action
-            document.getElementById('select-location-form').action = `{{ url('lokasi') }}/${data.lokasi.id}/select`;
-
-            // Show modal
-            locationDetailModal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
           })
-          .catch(error => console.error('Error:', error));
+          .catch(error => {
+            console.error('Error fetching location details:', error);
+
+            // Show error message in student list
+            const studentListContainer = document.getElementById('modal-student-list');
+            studentListContainer.innerHTML = `
+              <tr>
+                <td colspan="3" class="px-4 py-3 text-sm text-red-500 text-center">
+                  Terjadi kesalahan saat memuat data
+                </td>
+              </tr>
+            `;
+          });
+
+        // Show modal
+        locationDetailModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
       });
     });
 

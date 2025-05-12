@@ -51,6 +51,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/lokasi', [LokasiController::class, 'index'])->name('lokasi.index');
     Route::get('/lokasi/{id}', [LokasiController::class, 'show'])->name('lokasi.show');
     Route::post('/lokasi/{id}/select', [LokasiController::class, 'select'])->name('lokasi.select');
+    // web.php - tambahkan route untuk detail lokasi
+    Route::get('/lokasi/{id}/detail', [LokasiController::class, 'detail'])->name('lokasi.detail');
 
     // Pembayaran Routes
     Route::middleware('auth')->group(function () {

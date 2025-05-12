@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Lokasi;
 use App\Models\KuotaFakultas;
 use App\Models\Pendaftaran;
+use App\Models\Fakultas;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class LokasiController extends Controller
 {
@@ -14,10 +17,11 @@ class LokasiController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $lokasi = Lokasi::with('kuotaFakultas.fakultas')->get();
+        $lokasi = Lokasi::all();
+        $fakultas = Fakultas::all();
         $pendaftaran = Pendaftaran::where('user_id', $user->id)->first();
 
-        return view('user.location', compact('lokasi', 'user', 'pendaftaran'));
+        return view('user.location', compact('lokasi', 'user', 'pendaftaran', 'fakultas'));
     }
 
     // Tampilkan detail lokasi
@@ -26,8 +30,9 @@ class LokasiController extends Controller
         $user = Auth::user();
         $lokasi = Lokasi::with('kuotaFakultas.fakultas')->findOrFail($id);
         $pendaftaran = Pendaftaran::where('user_id', $user->id)->first();
+        $fakultas = Fakultas::all();
 
-        return view('user.location-detail', compact('lokasi', 'user', 'pendaftaran'));
+        return view('user.location-detail', compact('lokasi', 'user', 'pendaftaran', 'fakultas'));
     }
 
     // Pilih lokasi
@@ -114,5 +119,43 @@ class LokasiController extends Controller
 
         return redirect()->route('pendaftaran.index')
             ->with('success', 'Lokasi berhasil dipilih, silakan lengkapi formulir pendaftaran');
+    }
+
+    // Method detail untuk AJAX
+    public function detail($id)
+    {
+        // Dapatkan informasi lokasi
+        $lokasi = Lokasi::findOrFail($id);
+
+        // Dapatkan kuota per fakultas
+        $kuotaFakultas = KuotaFakultas::where('lokasi_id', $id)
+            ->get()
+            ->map(function ($kuota) {
+                $fakultas = Fakultas::find($kuota->fakultas_id);
+                return [
+                    'fakultas_id' => $kuota->fakultas_id,
+                    'fakultas_name' => $fakultas ? $fakultas->nama_fakultas : 'Unknown',
+                    'kuota' => $kuota->kuota,
+                    'terisi' => $kuota->terisi
+                ];
+            });
+
+        // Dapatkan daftar mahasiswa yang telah mendaftar di lokasi ini
+        $mahasiswa = DB::table('pendaftaran')
+            ->join('users', 'pendaftaran.user_id', '=', 'users.id')
+            ->join('fakultas', 'users.fakultas_id', '=', 'fakultas.id')
+            ->where('pendaftaran.lokasi_id', $id)
+            ->select(
+                'users.nama_lengkap',
+                'users.nim',
+                'fakultas.nama_fakultas as fakultas_nama'
+            )
+            ->get();
+
+        return response()->json([
+            'lokasi' => $lokasi,
+            'kuota_fakultas' => $kuotaFakultas,
+            'mahasiswa' => $mahasiswa
+        ]);
     }
 }
