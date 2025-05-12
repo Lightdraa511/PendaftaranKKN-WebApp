@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Fakultas;
 use App\Models\User;
 use App\Models\Admin;
+use App\Models\ProgramStudi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -65,6 +66,9 @@ class AuthController extends Controller
             'nama_lengkap' => 'required|string|max:255',
             'nim' => 'required|string|max:20|unique:users',
             'fakultas_id' => 'required|exists:fakultas,id',
+            'program_studi_id' => 'required|exists:program_studi,id',
+            'email' => 'required|string|email|max:255|unique:users',
+            'no_telepon' => 'required|string|max:15',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
@@ -77,8 +81,10 @@ class AuthController extends Controller
         $user = User::create([
             'nama_lengkap' => $request->nama_lengkap,
             'nim' => $request->nim,
-            'email' => $request->nim . '@student.ac.id', // Email otomatis dari NIM
+            'email' => $request->email,
             'fakultas_id' => $request->fakultas_id,
+            'program_studi_id' => $request->program_studi_id,
+            'no_telepon' => $request->no_telepon,
             'password' => Hash::make($request->password),
             'status_pembayaran' => 'belum',
             'status_pemilihan_lokasi' => 'belum',
@@ -103,5 +109,12 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    // API untuk mendapatkan program studi berdasarkan fakultas
+    public function getProgramStudi($fakultasId)
+    {
+        $programStudi = ProgramStudi::where('fakultas_id', $fakultasId)->get();
+        return response()->json($programStudi);
     }
 }

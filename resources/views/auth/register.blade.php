@@ -58,24 +58,85 @@
           @enderror
         </div>
 
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="fakultas_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Fakultas
+            </label>
+            <div class="mt-1">
+              <select
+                id="fakultas_id"
+                name="fakultas_id"
+                required
+                class="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="" disabled {{ old('fakultas_id') ? '' : 'selected' }}>Pilih fakultas</option>
+                @foreach($fakultas as $fak)
+                  <option value="{{ $fak->id }}" {{ old('fakultas_id') == $fak->id ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
+                @endforeach
+              </select>
+            </div>
+            @error('fakultas_id')
+              <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+          </div>
+
+          <div>
+            <label for="program_studi_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Program Studi
+            </label>
+            <div class="mt-1">
+              <select
+                id="program_studi_id"
+                name="program_studi_id"
+                required
+                class="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="" selected disabled>Pilih program studi</option>
+              </select>
+            </div>
+            @error('program_studi_id')
+              <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+          </div>
+        </div>
+
         <div>
-          <label for="fakultas_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Fakultas
+          <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Email
           </label>
           <div class="mt-1">
-            <select
-              id="fakultas_id"
-              name="fakultas_id"
+            <input
+              id="email"
+              name="email"
+              type="email"
               required
               class="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="" disabled {{ old('fakultas_id') ? '' : 'selected' }}>Pilih fakultas</option>
-              @foreach($fakultas as $fak)
-                <option value="{{ $fak->id }}" {{ old('fakultas_id') == $fak->id ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
-              @endforeach
-            </select>
+              placeholder="Masukkan email"
+              value="{{ old('email') }}"
+            />
           </div>
-          @error('fakultas_id')
+          @error('email')
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+          @enderror
+        </div>
+
+        <div>
+          <label for="no_telepon" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Nomor Telepon
+          </label>
+          <div class="mt-1">
+            <input
+              id="no_telepon"
+              name="no_telepon"
+              type="text"
+              required
+              class="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Masukkan nomor telepon"
+              value="{{ old('no_telepon') }}"
+            />
+          </div>
+          @error('no_telepon')
             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
           @enderror
         </div>
@@ -151,4 +212,39 @@
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const fakultasSelect = document.getElementById('fakultas_id');
+    const programStudiSelect = document.getElementById('program_studi_id');
+
+    fakultasSelect.addEventListener('change', function() {
+      const fakultasId = this.value;
+      if (fakultasId) {
+        // Kosongkan dropdown program studi
+        programStudiSelect.innerHTML = '<option value="" selected disabled>Memuat program studi...</option>';
+
+        // Ambil data program studi berdasarkan fakultas
+        fetch(`/api/program-studi/${fakultasId}`)
+          .then(response => response.json())
+          .then(data => {
+            programStudiSelect.innerHTML = '<option value="" selected disabled>Pilih program studi</option>';
+
+            data.forEach(prodi => {
+              const option = document.createElement('option');
+              option.value = prodi.id;
+              option.textContent = prodi.nama_program;
+              programStudiSelect.appendChild(option);
+            });
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            programStudiSelect.innerHTML = '<option value="" selected disabled>Gagal memuat data</option>';
+          });
+      } else {
+        programStudiSelect.innerHTML = '<option value="" selected disabled>Pilih program studi</option>';
+      }
+    });
+  });
+</script>
 @endsection

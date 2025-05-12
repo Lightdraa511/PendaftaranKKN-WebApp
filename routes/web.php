@@ -30,6 +30,9 @@ Route::get('/register', [AuthController::class, 'registerForm'])->name('register
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// API untuk mendapatkan program studi berdasarkan fakultas
+Route::get('/api/program-studi/{fakultas_id}', [AuthController::class, 'getProgramStudi']);
+
 // Midtrans Notification
 Route::post('/midtrans/notification', [MidtransController::class, 'notification'])->name('midtrans.notification');
 
@@ -56,7 +59,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/pembayaran/finish', [PembayaranController::class, 'finish'])->name('pembayaran.finish');
         Route::get('/pembayaran/{id}/check-status', [PembayaranController::class, 'checkStatus'])->name('pembayaran.check_status');
     });
-    
+
     // Pendaftaran
     Route::get('/pendaftaran', [PendaftaranController::class, 'index'])->name('pendaftaran.index');
     Route::post('/pendaftaran', [PendaftaranController::class, 'store'])->name('pendaftaran.store');
