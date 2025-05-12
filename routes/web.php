@@ -49,15 +49,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/lokasi/{id}', [LokasiController::class, 'show'])->name('lokasi.show');
     Route::post('/lokasi/{id}/select', [LokasiController::class, 'select'])->name('lokasi.select');
 
-    // Pembayaran
-    Route::get('/pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
-    Route::post('/pembayaran/process', [PembayaranController::class, 'process'])->name('pembayaran.process');
-    Route::get('/pembayaran/{id}/check', [PembayaranController::class, 'check'])->name('pembayaran.check');
-    Route::post('/pembayaran/callback', [PembayaranController::class, 'callback'])->name('pembayaran.callback');
-
-    // Midtrans Notification (tidak perlu login)
-    Route::post('/midtrans/notification', [MidtransController::class, 'notification'])->name('midtrans.notification');
-
+    // Pembayaran Routes
+    Route::middleware('auth')->group(function () {
+        Route::get('/pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
+        Route::post('/pembayaran/process', [PembayaranController::class, 'process'])->name('pembayaran.process');
+        Route::get('/pembayaran/finish', [PembayaranController::class, 'finish'])->name('pembayaran.finish');
+        Route::get('/pembayaran/{id}/check-status', [PembayaranController::class, 'checkStatus'])->name('pembayaran.check_status');
+    });
+    
     // Pendaftaran
     Route::get('/pendaftaran', [PendaftaranController::class, 'index'])->name('pendaftaran.index');
     Route::post('/pendaftaran', [PendaftaranController::class, 'store'])->name('pendaftaran.store');

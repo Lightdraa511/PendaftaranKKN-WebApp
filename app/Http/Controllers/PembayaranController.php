@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Pembayaran;
 use App\Models\Pengaturan;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Midtrans\Config;
 use Midtrans\Snap;
+use Midtrans\Transaction;
+use Illuminate\Support\Facades\Log;
 
 class PembayaranController extends Controller
 {
@@ -15,6 +18,7 @@ class PembayaranController extends Controller
     {
         // Konfigurasi Midtrans
         Config::$serverKey = config('services.midtrans.server_key');
+        Config::$clientKey = config('services.midtrans.client_key');
         Config::$isProduction = config('services.midtrans.is_production');
         Config::$isSanitized = true;
         Config::$is3ds = true;
@@ -32,8 +36,8 @@ class PembayaranController extends Controller
         return view('user.payment', compact('user', 'pengaturan', 'riwayatPembayaran'));
     }
 
-    // Proses pembayaran
-    public function process()
+    // Proses pembayaran - memunculkan Snap Midtrans
+    public function process(Request $request)
     {
         $user = Auth::user();
         $pengaturan = Pengaturan::getCurrent();
@@ -49,7 +53,7 @@ class PembayaranController extends Controller
 
         // Buat record pembayaran
         $pembayaran = new Pembayaran();
-        $pembayaran->id_pembayaran = Pembayaran::generateIdPembayaran();
+        $pembayaran->id_pembayaran = $this->generateIdPembayaran();
         $pembayaran->user_id = $user->id;
         $pembayaran->total_pembayaran = $totalPembayaran;
         $pembayaran->status = 'pending';
@@ -90,31 +94,34 @@ class PembayaranController extends Controller
             $pembayaran->midtrans_snap_token = $snapToken;
             $pembayaran->save();
 
+            // Tampilkan halaman dengan snap token
             return view('user.payment-process', compact('snapToken', 'pembayaran'));
         } catch (\Exception $e) {
+            Log::error('Midtrans Error: ' . $e->getMessage());
             return redirect()->route('pembayaran.index')
-                ->with('error', 'Terjadi kesalahan saat memproses pembayaran: ' . $e->getMessage());
+                ->with('error', 'Terjadi kesalahan saat memproses pembayaran. Silahkan coba lagi.');
         }
     }
 
-    // Callback dari Midtrans
-    public function callback(Request $request)
+    // Halaman finish setelah pembayaran
+    public function finish(Request $request)
     {
-        $serverKey = config('services.midtrans.server_key');
-        $hashed = hash("sha512", $request->order_id.$request->status_code.$request->gross_amount.$serverKey);
+        $orderId = $request->order_id;
+        $pembayaran = Pembayaran::where('id_pembayaran', $orderId)->firstOrFail();
 
-        if ($hashed == $request->signature_key) {
-            $pembayaran = Pembayaran::where('id_pembayaran', $request->order_id)->first();
+        try {
+            // Cek status transaksi di Midtrans
+            $status = Transaction::status($orderId);
 
-            if ($pembayaran) {
-                // Update status pembayaran
-                $pembayaran->midtrans_payment_type = $request->payment_type;
+            // Update pembayaran berdasarkan status dari Midtrans
+            if ($status) {
+                $pembayaran->midtrans_payment_type = $status->payment_type ?? null;
 
-                if ($request->payment_type == 'bank_transfer') {
-                    $pembayaran->midtrans_bank = $request->va_numbers[0]->bank ?? null;
+                if (isset($status->va_numbers[0]->bank)) {
+                    $pembayaran->midtrans_bank = $status->va_numbers[0]->bank;
                 }
 
-                if ($request->transaction_status == 'settlement' || $request->transaction_status == 'capture') {
+                if ($status->transaction_status == 'settlement' || $status->transaction_status == 'capture') {
                     $pembayaran->status = 'sukses';
                     $pembayaran->tanggal_bayar = now();
 
@@ -122,23 +129,32 @@ class PembayaranController extends Controller
                     $user = $pembayaran->user;
                     $user->status_pembayaran = 'lunas';
                     $user->save();
-                } else if ($request->transaction_status == 'pending') {
+
+                    return redirect()->route('pembayaran.index')
+                        ->with('success', 'Pembayaran berhasil! Status pembayaran Anda telah diperbarui.');
+                } else if ($status->transaction_status == 'pending') {
                     $pembayaran->status = 'pending';
+
+                    return redirect()->route('pembayaran.index')
+                        ->with('info', 'Pembayaran sedang diproses. Silakan cek status pembayaran Anda nanti.');
                 } else {
                     $pembayaran->status = 'gagal';
+
+                    return redirect()->route('pembayaran.index')
+                        ->with('error', 'Pembayaran gagal. Silakan coba lagi.');
                 }
 
                 $pembayaran->save();
-
-                return response()->json(['success' => true]);
             }
+        } catch (\Exception $e) {
+            Log::error('Midtrans Status Error: ' . $e->getMessage());
         }
 
-        return response()->json(['success' => false]);
+        return redirect()->route('pembayaran.index');
     }
 
-    // Check status pembayaran
-    public function check($id)
+    // Cek status pembayaran
+    public function checkStatus($id)
     {
         $pembayaran = Pembayaran::findOrFail($id);
 
@@ -146,12 +162,65 @@ class PembayaranController extends Controller
             abort(403);
         }
 
-        // Logic untuk cek status pembayaran di Midtrans bisa ditambahkan di sini
+        try {
+            // Cek status transaksi di Midtrans
+            $status = Transaction::status($pembayaran->id_pembayaran);
 
-        return response()->json([
-            'status' => $pembayaran->status,
-            'payment_type' => $pembayaran->midtrans_payment_type,
-            'bank' => $pembayaran->midtrans_bank,
-        ]);
+            // Update pembayaran berdasarkan status dari Midtrans
+            if ($status) {
+                $pembayaran->midtrans_payment_type = $status->payment_type ?? null;
+
+                if (isset($status->va_numbers[0]->bank)) {
+                    $pembayaran->midtrans_bank = $status->va_numbers[0]->bank;
+                }
+
+                if ($status->transaction_status == 'settlement' || $status->transaction_status == 'capture') {
+                    $pembayaran->status = 'sukses';
+                    $pembayaran->tanggal_bayar = now();
+
+                    // Update status pembayaran di user
+                    $user = $pembayaran->user;
+                    $user->status_pembayaran = 'lunas';
+                    $user->save();
+
+                    return redirect()->route('pembayaran.index')
+                        ->with('success', 'Pembayaran berhasil! Status pembayaran Anda telah diperbarui.');
+                } else if ($status->transaction_status == 'pending') {
+                    $pembayaran->status = 'pending';
+
+                    return redirect()->route('pembayaran.index')
+                        ->with('info', 'Pembayaran sedang diproses. Silakan cek status pembayaran Anda nanti.');
+                } else {
+                    $pembayaran->status = 'gagal';
+
+                    return redirect()->route('pembayaran.index')
+                        ->with('error', 'Pembayaran gagal. Silakan coba lagi.');
+                }
+
+                $pembayaran->save();
+            }
+        } catch (\Exception $e) {
+            Log::error('Midtrans Status Error: ' . $e->getMessage());
+            return redirect()->route('pembayaran.index')
+                ->with('error', 'Terjadi kesalahan saat memeriksa status pembayaran.');
+        }
+    }
+
+    // Generate ID Pembayaran
+    private function generateIdPembayaran()
+    {
+        $date = date('Ymd');
+        $lastPayment = Pembayaran::where('id_pembayaran', 'like', "KKNM-PAY-{$date}-%")
+            ->orderBy('id_pembayaran', 'desc')
+            ->first();
+
+        if ($lastPayment) {
+            $lastNumber = intval(substr($lastPayment->id_pembayaran, -3));
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+        return "KKNM-PAY-{$date}-" . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
     }
 }

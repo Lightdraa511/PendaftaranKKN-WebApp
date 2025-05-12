@@ -4,50 +4,51 @@
 
 @section('content')
 <div class="space-y-6">
-  <div class="card w-full">
-    <div class="flex items-center mb-6">
-      <i class="fas fa-credit-card w-6 h-6 text-blue-600 dark:text-blue-400 mr-2"></i>
-      <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Proses Pembayaran</h2>
-    </div>
+  <div class="card w-full p-5 text-center">
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Proses Pembayaran</h2>
 
-    <div class="text-center p-6">
-      <div class="mb-6">
-        <i class="fas fa-spinner fa-spin text-blue-600 dark:text-blue-400 text-5xl mb-4"></i>
-        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Memproses Pembayaran</h3>
-        <p class="text-gray-600 dark:text-gray-300">
-          Mohon tunggu sebentar, Anda akan dialihkan ke halaman pembayaran Midtrans...
-        </p>
-      </div>
-
-      <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
-        <div class="text-left mb-4">
-          <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Detail Pembayaran:</h4>
-          <div class="space-y-1">
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-600 dark:text-gray-400">ID Pembayaran:</span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ $pembayaran->id_pembayaran }}</span>
-            </div>
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-600 dark:text-gray-400">Total Pembayaran:</span>
-              <span class="font-medium text-gray-900 dark:text-white">Rp{{ number_format($pembayaran->total_pembayaran, 0, ',', '.') }}</span>
-            </div>
-          </div>
+    <div class="bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 mb-6 rounded-r-lg text-left">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <i class="fas fa-info-circle w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5"></i>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-blue-700 dark:text-blue-300">
+            Silakan selesaikan pembayaran Anda menggunakan metode pembayaran yang tersedia. Jangan tutup halaman ini sebelum pembayaran selesai.
+          </p>
         </div>
       </div>
+    </div>
 
-      <p class="text-sm text-gray-500 dark:text-gray-400">
-        Jika Anda tidak dialihkan secara otomatis dalam beberapa detik, silakan klik tombol di bawah.
-      </p>
+    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Detail Pembayaran</h3>
 
-      <button type="button" id="pay-button" class="btn btn-primary mt-4">
-        <i class="fas fa-external-link-alt mr-2"></i> Lanjutkan ke Pembayaran
-      </button>
-
-      <div class="mt-4">
-        <a href="{{ route('pembayaran.index') }}" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-          <i class="fas fa-arrow-left mr-1"></i> Kembali ke halaman pembayaran
-        </a>
+      <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+        <span class="text-gray-700 dark:text-gray-300">ID Pembayaran</span>
+        <span class="font-medium text-gray-900 dark:text-white">{{ $pembayaran->id_pembayaran }}</span>
       </div>
+
+      <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+        <span class="text-gray-700 dark:text-gray-300">Total Pembayaran</span>
+        <span class="font-medium text-gray-900 dark:text-white">Rp{{ number_format($pembayaran->total_pembayaran, 0, ',', '.') }}</span>
+      </div>
+
+      <div class="flex justify-between items-center py-2">
+        <span class="text-gray-700 dark:text-gray-300">Status</span>
+        <span class="px-2 py-1 text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300 rounded-full">
+          Menunggu Pembayaran
+        </span>
+      </div>
+    </div>
+
+    <button id="pay-button" class="btn btn-primary py-3 px-6 mx-auto">
+      <i class="fas fa-credit-card mr-2"></i> Bayar Sekarang
+    </button>
+
+    <div class="mt-4">
+      <a href="{{ route('pembayaran.index') }}" class="text-blue-600 dark:text-blue-400 hover:underline">
+        <i class="fas fa-arrow-left mr-1"></i> Kembali ke halaman pembayaran
+      </a>
     </div>
   </div>
 </div>
@@ -58,28 +59,34 @@
 <script type="text/javascript" src="{{ config('services.midtrans.snap_url') }}" data-client-key="{{ config('services.midtrans.client_key') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Tampilkan Snap popup
-    setTimeout(function() {
-      snap.pay('{{ $snapToken }}', {
-        onSuccess: function(result) {
-          window.location.href = '{{ route('pembayaran.index') }}?status=success';
-        },
-        onPending: function(result) {
-          window.location.href = '{{ route('pembayaran.index') }}?status=pending';
-        },
-        onError: function(result) {
-          window.location.href = '{{ route('pembayaran.index') }}?status=error';
-        },
-        onClose: function() {
-          window.location.href = '{{ route('pembayaran.index') }}?status=close';
-        }
-      });
-    }, 1000);
+    // Untuk halaman pembayaran-process
+    const payButton = document.getElementById('pay-button');
 
-    // Tombol untuk membuka popup secara manual
-    document.getElementById('pay-button').addEventListener('click', function() {
-      snap.pay('{{ $snapToken }}');
-    });
+    if (payButton) {
+      payButton.addEventListener('click', function() {
+        // Tampilkan popup Midtrans Snap
+        snap.pay('{{ $pembayaran->midtrans_snap_token }}', {
+          onSuccess: function(result) {
+            // Redirect ke halaman finish dengan parameter order_id
+            window.location.href = '{{ route('pembayaran.finish') }}?order_id={{ $pembayaran->id_pembayaran }}&status=success';
+          },
+          onPending: function(result) {
+            window.location.href = '{{ route('pembayaran.finish') }}?order_id={{ $pembayaran->id_pembayaran }}&status=pending';
+          },
+          onError: function(result) {
+            window.location.href = '{{ route('pembayaran.finish') }}?order_id={{ $pembayaran->id_pembayaran }}&status=error';
+          },
+          onClose: function() {
+            window.location.href = '{{ route('pembayaran.index') }}?status=close';
+          }
+        });
+      });
+
+      // Otomatis klik tombol bayar
+      setTimeout(function() {
+        payButton.click();
+      }, 1000);
+    }
   });
 </script>
 @endsection
