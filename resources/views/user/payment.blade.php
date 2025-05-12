@@ -8,12 +8,6 @@
     <div class="flex items-center mb-3 sm:mb-4">
       <i class="fas fa-credit-card w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400 mr-2"></i>
       <h2 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Pembayaran KKNM</h2>
-
-      @if($user->status_pembayaran == 'lunas')
-      <span class="ml-auto px-3 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">
-        Pembayaran Telah Lunas
-      </span>
-      @endif
     </div>
 
     <div class="mb-4 sm:mb-5">
@@ -104,6 +98,16 @@
           <div class="flex justify-between py-0.5">
             <span class="text-gray-500 dark:text-gray-400">Jumlah:</span>
             <span class="text-right text-gray-900 dark:text-white">Rp{{ number_format($pembayaran->total_pembayaran, 0, ',', '.') }}</span>
+          </div>
+          <div class="flex justify-between py-0.5">
+            <span class="text-gray-500 dark:text-gray-400">Metode:</span>
+            <span class="text-right text-gray-900 dark:text-white">
+              @if($user->status_pembayaran == 'lunas')
+                {{ $pembayaran->midtrans_payment_type ? ucfirst(str_replace('_', ' ', $pembayaran->midtrans_payment_type)) : 'Bank Transfer' }}
+              @else
+                {{ $pembayaran->midtrans_payment_type ? ucfirst(str_replace('_', ' ', $pembayaran->midtrans_payment_type)) : '-' }}
+              @endif
+            </span>
           </div>
           <div class="flex justify-between py-0.5">
             <span class="text-gray-500 dark:text-gray-400">Status:</span>
