@@ -34,21 +34,7 @@ class ProfileController extends Controller
             'alamat' => 'nullable|string|max:500',
             'fakultas_id' => 'required|exists:fakultas,id',
             'program_studi_id' => 'nullable|exists:program_studi,id',
-            'foto_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
-
-        // Handle foto profil
-        if ($request->hasFile('foto_profil')) {
-            // Hapus foto lama jika ada
-            if ($user->foto_profil) {
-                Storage::delete('public/profile_photos/' . $user->foto_profil);
-            }
-
-            // Upload foto baru
-            $filename = time() . '.' . $request->foto_profil->extension();
-            $request->foto_profil->storeAs('public/profile_photos', $filename);
-            $user->foto_profil = $filename;
-        }
 
         // Update data user
         $user->nama_lengkap = $request->nama_lengkap;
@@ -60,6 +46,50 @@ class ProfileController extends Controller
         $user->save();
 
         return redirect()->route('profile.index')->with('success', 'Profil berhasil diperbarui');
+    }
+
+    // Update foto profil saja
+    public function updatePhoto(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'foto_profil' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        // Handle foto profil
+        if ($request->hasFile('foto_profil')) {
+            try {
+                // Hapus foto lama jika ada
+                if ($user->foto_profil && Storage::disk('public')->exists('profile_photos/' . $user->foto_profil)) {
+                    Storage::disk('public')->delete('profile_photos/' . $user->foto_profil);
+                }
+
+                // Upload foto baru
+                $filename = time() . '_' . $user->id . '.' . $request->foto_profil->extension();
+
+                // Pastikan direktori ada
+                Storage::disk('public')->makeDirectory('profile_photos', 0755, true);
+
+                // Simpan file
+                $path = $request->file('foto_profil')->storeAs('profile_photos', $filename, 'public');
+
+                // Tambahkan log debug
+                \Log::info('Foto profil disimpan di: ' . $path);
+                \Log::info('Full path: ' . Storage::disk('public')->path($path));
+
+                // Update database
+                $user->foto_profil = $filename;
+                $user->save();
+
+                return redirect()->route('profile.index')->with('success', 'Foto profil berhasil diperbarui');
+            } catch (\Exception $e) {
+                \Log::error('Error saat mengupload foto: ' . $e->getMessage());
+                return redirect()->route('profile.index')->with('error', 'Terjadi kesalahan saat mengunggah foto: ' . $e->getMessage());
+            }
+        }
+
+        return redirect()->route('profile.index')->with('error', 'Terjadi kesalahan saat mengunggah foto');
     }
 
     // Update password
