@@ -11,15 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
-            $table->timestamps();
-        });
+    Schema::create('users', function (Blueprint $table) {
+        $table->id();
+        $table->string('nama_lengkap');
+        $table->string('nim')->unique();
+        $table->string('email')->unique();
+        $table->string('password');
+        $table->string('no_telepon')->nullable();
+        $table->text('alamat')->nullable();
+        $table->string('foto_profil')->nullable(); // Kolom untuk foto profil
+        $table->unsignedBigInteger('fakultas_id')->nullable();
+        $table->unsignedBigInteger('program_studi_id')->nullable();
+        $table->float('ipk')->nullable();
+        $table->enum('status_pembayaran', ['belum', 'lunas'])->default('belum');
+        $table->enum('status_pemilihan_lokasi', ['belum', 'sudah'])->default('belum');
+        $table->enum('status_pendaftaran', ['belum', 'sudah'])->default('belum');
+        $table->rememberToken();
+        $table->timestamps();
+    });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
