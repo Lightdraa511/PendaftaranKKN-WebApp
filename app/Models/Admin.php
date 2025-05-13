@@ -13,6 +13,8 @@ class Admin extends Authenticatable
 
     protected $guard = 'admin';
 
+    protected $table = 'admins';
+
     protected $fillable = [
         'nama',
         'email',
@@ -27,4 +29,16 @@ class Admin extends Authenticatable
     protected $casts = [
         'password' => 'hashed',
     ];
+
+    // Getter untuk nama
+    public function getNamaAttribute($value)
+    {
+        return ucwords($value);
+    }
+
+    // Set password (otomatis di-hash)
+    public function setPasswordAttribute($value)
+    {
+        $this->attributes['password'] = bcrypt($value);
+    }
 }

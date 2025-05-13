@@ -99,14 +99,13 @@
         </div>
 
         <div class="mt-6">
-          <button
-            type="button"
+          <a
+            href="{{ route('admin.login') }}"
             class="w-full inline-flex justify-center py-2.5 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
-            id="admin-login"
           >
             <i class="fas fa-user-shield mr-2 text-blue-600 dark:text-blue-400"></i>
             Admin
-          </button>
+          </a>
         </div>
       </div>
     </div>
@@ -130,8 +129,7 @@
     const adminLoginButton = document.getElementById('admin-login');
     if (adminLoginButton) {
       adminLoginButton.addEventListener('click', function() {
-        document.getElementById('nim').value = 'admin';
-        document.getElementById('password').value = 'admin123';
+        window.location.href = "{{ route('admin.login') }}";
       });
     }
   });

@@ -22,8 +22,15 @@ class DatabaseSeeder extends Seeder
         // Buat admin
         Admin::create([
             'nama' => 'Admin KKNM',
-            'email' => 'admin@admin.com',
-            'password' => Hash::make('admin123'),
+            'email' => 'admin@kknm.ac.id',
+            'password' => 'admin123',
+        ]);
+
+        // Buat admin tambahan
+        Admin::create([
+            'nama' => 'Petugas KKNM',
+            'email' => 'petugas@kknm.ac.id',
+            'password' => 'petugas123',
         ]);
 
         // Buat fakultas

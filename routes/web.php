@@ -33,6 +33,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // API untuk mendapatkan program studi berdasarkan fakultas
 Route::get('/api/program-studi/{fakultas_id}', [AuthController::class, 'getProgramStudi']);
 
+// API untuk mendapatkan daftar fakultas
+Route::get('/api/fakultas', [App\Http\Controllers\ApiController::class, 'getAllFakultas'])->name('api.fakultas');
+
 // Midtrans Notification
 Route::post('/midtrans/notification', [MidtransController::class, 'notification'])->name('midtrans.notification');
 
@@ -73,5 +76,39 @@ Route::middleware('auth')->group(function () {
 
 // Admin Routes
 Route::prefix('admin')->name('admin.')->group(function () {
-    // Admin auth routes akan ditambahkan nanti
+    // Admin auth routes
+    Route::get('/login', [App\Http\Controllers\AdminAuthController::class, 'loginForm'])->name('login');
+    Route::post('/login', [App\Http\Controllers\AdminAuthController::class, 'login']);
+    Route::post('/logout', [App\Http\Controllers\AdminAuthController::class, 'logout'])->name('logout');
+
+    // Admin protected routes
+    Route::middleware('auth:admin')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\AdminDashboardController::class, 'index'])->name('dashboard');
+
+        // Kelola Mahasiswa
+        Route::get('/mahasiswa', [App\Http\Controllers\AdminUserController::class, 'index'])->name('mahasiswa.index');
+        Route::get('/mahasiswa/create', [App\Http\Controllers\AdminUserController::class, 'create'])->name('mahasiswa.create');
+        Route::post('/mahasiswa', [App\Http\Controllers\AdminUserController::class, 'store'])->name('mahasiswa.store');
+        Route::get('/mahasiswa/{id}', [App\Http\Controllers\AdminUserController::class, 'show'])->name('mahasiswa.show');
+        Route::get('/mahasiswa/{id}/edit', [App\Http\Controllers\AdminUserController::class, 'edit'])->name('mahasiswa.edit');
+        Route::put('/mahasiswa/{id}', [App\Http\Controllers\AdminUserController::class, 'update'])->name('mahasiswa.update');
+        Route::delete('/mahasiswa/{id}', [App\Http\Controllers\AdminUserController::class, 'destroy'])->name('mahasiswa.destroy');
+        Route::get('/api/program-studi/{fakultas_id}', [App\Http\Controllers\AdminUserController::class, 'getProgramStudi'])->name('program-studi.get');
+
+        // Kelola Lokasi KKN
+        Route::get('/lokasi', [App\Http\Controllers\AdminLokasiController::class, 'index'])->name('lokasi.index');
+        Route::get('/lokasi/create', [App\Http\Controllers\AdminLokasiController::class, 'create'])->name('lokasi.create');
+        Route::post('/lokasi', [App\Http\Controllers\AdminLokasiController::class, 'store'])->name('lokasi.store');
+        Route::get('/lokasi/{id}', [App\Http\Controllers\AdminLokasiController::class, 'show'])->name('lokasi.show');
+        Route::get('/lokasi/{id}/edit', [App\Http\Controllers\AdminLokasiController::class, 'edit'])->name('lokasi.edit');
+        Route::put('/lokasi/{id}', [App\Http\Controllers\AdminLokasiController::class, 'update'])->name('lokasi.update');
+        Route::delete('/lokasi/{id}', [App\Http\Controllers\AdminLokasiController::class, 'destroy'])->name('lokasi.destroy');
+        Route::delete('/lokasi/kuota/{id}', [App\Http\Controllers\AdminLokasiController::class, 'deleteKuota'])->name('lokasi.delete-kuota');
+
+        // Kelola Pembayaran
+        Route::get('/payment', [App\Http\Controllers\AdminPaymentController::class, 'index'])->name('payment.index');
+        Route::get('/payment/{id}', [App\Http\Controllers\AdminPaymentController::class, 'show'])->name('payment.show');
+        Route::put('/payment/{id}/verify', [App\Http\Controllers\AdminPaymentController::class, 'verify'])->name('payment.verify');
+        Route::put('/payment/{id}/reject', [App\Http\Controllers\AdminPaymentController::class, 'reject'])->name('payment.reject');
+    });
 });
