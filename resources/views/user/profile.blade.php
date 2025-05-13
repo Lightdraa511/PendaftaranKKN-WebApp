@@ -4,6 +4,19 @@
 
 @section('content')
 <div class="space-y-6">
+  <!-- Pesan Sukses atau Error -->
+  @if(session('success'))
+  <div class="alert bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded mb-4" role="alert">
+    <p class="font-medium"><i class="fas fa-check-circle mr-2"></i> {{ session('success') }}</p>
+  </div>
+  @endif
+
+  @if(session('error'))
+  <div class="alert bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded mb-4" role="alert">
+    <p class="font-medium"><i class="fas fa-exclamation-circle mr-2"></i> {{ session('error') }}</p>
+  </div>
+  @endif
+
   <div class="card w-full">
     <div class="flex items-center mb-6">
       <i class="fas fa-user w-6 h-6 text-blue-600 dark:text-blue-400 mr-2"></i>
@@ -13,22 +26,27 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div class="md:col-span-1">
         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 text-center">
-          <div class="w-32 h-32 mx-auto bg-gray-800 rounded-full flex items-center justify-center mb-4 overflow-hidden">
+          <div class="w-32 h-32 mx-auto bg-gray-800 rounded-full flex items-center justify-center mb-4 overflow-hidden" id="foto-preview-container">
             @if($user->foto_profil)
-              <img src="{{ asset('storage/profile_photos/' . $user->foto_profil) }}" alt="{{ $user->nama_lengkap }}" class="w-full h-full object-cover">
+              <img src="{{ asset('storage/profile_photos/' . $user->foto_profil) }}" alt="{{ $user->nama_lengkap }}" class="w-full h-full object-cover" id="current-photo" onerror="this.onerror=null;this.src='{{ asset('images/default-avatar.svg') }}';document.getElementById('default-photo-icon').style.display='block';">
             @else
-              <i class="fas fa-user text-5xl text-gray-300"></i>
+              <i class="fas fa-user text-5xl text-gray-300" id="default-photo-icon"></i>
             @endif
           </div>
           <h3 class="text-xl font-semibold mb-1 dark:text-white">{{ $user->nama_lengkap }}</h3>
           <p class="text-md text-gray-600 dark:text-gray-300 mb-4">{{ $user->email }}</p>
-          <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" id="foto-form">
+          <form action="{{ route('profile.update_photo') }}" method="POST" enctype="multipart/form-data" id="foto-form">
             @csrf
             @method('PUT')
-            <input type="file" name="foto_profil" id="foto_profil" class="hidden" onChange="document.getElementById('foto-form').submit()">
-            <label for="foto_profil" class="w-full btn bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 mt-2 cursor-pointer">
-              <i class="fas fa-camera mr-1"></i> Ubah Foto
-            </label>
+            <input type="file" name="foto_profil" id="foto_profil" class="hidden" accept="image/*">
+            <div class="flex flex-col space-y-2">
+              <label for="foto_profil" class="w-full btn bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 mt-2 cursor-pointer">
+                <i class="fas fa-camera mr-1"></i> Pilih Foto
+              </label>
+              <button type="submit" id="simpan-foto" class="w-full btn btn-primary hidden">
+                <i class="fas fa-save mr-1"></i> Simpan Perubahan
+              </button>
+            </div>
           </form>
         </div>
 
@@ -273,6 +291,42 @@
             });
           })
           .catch(error => console.error('Error:', error));
+      });
+    }
+
+    // Foto preview sebelum upload
+    const fotoInput = document.getElementById('foto_profil');
+    const previewContainer = document.getElementById('foto-preview-container');
+    const defaultIcon = document.getElementById('default-photo-icon');
+    const currentPhoto = document.getElementById('current-photo');
+    const simpanBtn = document.getElementById('simpan-foto');
+
+    if (fotoInput) {
+      fotoInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+          const reader = new FileReader();
+
+          reader.onload = function(e) {
+            if (defaultIcon && defaultIcon.parentNode) {
+              defaultIcon.style.display = 'none';
+            }
+
+            if (currentPhoto) {
+              currentPhoto.src = e.target.result;
+            } else {
+              const img = document.createElement('img');
+              img.src = e.target.result;
+              img.id = 'current-photo';
+              img.className = 'w-full h-full object-cover';
+              previewContainer.appendChild(img);
+            }
+
+            // Tampilkan tombol simpan
+            simpanBtn.classList.remove('hidden');
+          };
+
+          reader.readAsDataURL(this.files[0]);
+        }
       });
     }
   });
