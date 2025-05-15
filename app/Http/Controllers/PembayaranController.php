@@ -130,6 +130,9 @@ class PembayaranController extends Controller
                     $user->status_pembayaran = 'lunas';
                     $user->save();
 
+                    // Simpan perubahan status pembayaran
+                    $pembayaran->save();
+
                     return redirect()->route('pembayaran.index')
                         ->with('success', 'Pembayaran berhasil! Status pembayaran Anda telah diperbarui.');
                 } else if ($status->transaction_status == 'pending') {
@@ -138,7 +141,8 @@ class PembayaranController extends Controller
                     return redirect()->route('pembayaran.index')
                         ->with('info', 'Pembayaran sedang diproses. Silakan cek status pembayaran Anda nanti.');
                 } else {
-                    $pembayaran->status = 'gagal';
+                    // Karena enum status hanya menerima 'pending' atau 'sukses'
+                    $pembayaran->status = 'pending';
 
                     return redirect()->route('pembayaran.index')
                         ->with('error', 'Pembayaran gagal. Silakan coba lagi.');
@@ -183,6 +187,9 @@ class PembayaranController extends Controller
                     $user->status_pembayaran = 'lunas';
                     $user->save();
 
+                    // Simpan perubahan status pembayaran
+                    $pembayaran->save();
+
                     return redirect()->route('pembayaran.index')
                         ->with('success', 'Pembayaran berhasil! Status pembayaran Anda telah diperbarui.');
                 } else if ($status->transaction_status == 'pending') {
@@ -191,7 +198,8 @@ class PembayaranController extends Controller
                     return redirect()->route('pembayaran.index')
                         ->with('info', 'Pembayaran sedang diproses. Silakan cek status pembayaran Anda nanti.');
                 } else {
-                    $pembayaran->status = 'gagal';
+                    // Karena enum status hanya menerima 'pending' atau 'sukses'
+                    $pembayaran->status = 'pending';
 
                     return redirect()->route('pembayaran.index')
                         ->with('error', 'Pembayaran gagal. Silakan coba lagi.');

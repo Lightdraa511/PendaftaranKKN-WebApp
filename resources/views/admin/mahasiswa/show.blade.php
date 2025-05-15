@@ -97,10 +97,10 @@ Catatan Pengembangan:
                 <div>
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Status Pembayaran</p>
                     <p class="mt-1">
-                        @if($mahasiswa->status_pembayaran == 'sudah')
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100">Sudah Bayar</span>
+                        @if($mahasiswa->status_pembayaran == 'lunas')
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100">Lunas</span>
                         @else
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100">Belum Bayar</span>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100">Belum Lunas</span>
                         @endif
                     </p>
                 </div>
@@ -122,12 +122,8 @@ Catatan Pengembangan:
                 <div>
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Status Pendaftaran</p>
                     <p class="mt-1">
-                        @if($mahasiswa->status_pendaftaran == 'diterima')
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100">Diterima</span>
-                        @elseif($mahasiswa->status_pendaftaran == 'ditolak')
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100">Ditolak</span>
-                        @elseif($mahasiswa->status_pendaftaran == 'menunggu')
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-100">Menunggu</span>
+                        @if($mahasiswa->status_pendaftaran == 'sudah')
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100">Sudah Mendaftar</span>
                         @else
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-100">Belum Mendaftar</span>
                         @endif
@@ -141,10 +137,10 @@ Catatan Pengembangan:
         <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-6">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">Informasi Pendaftaran</h3>
-                @if(isset($mahasiswa->pendaftaran->lokasi->id))
-                <button type="button" class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-not-allowed" disabled title="Halaman detail lokasi sedang dalam pengembangan">
-                    <i class="fas fa-external-link-alt mr-1"></i> Lihat Detail Lokasi
-                </button>
+                @if(isset($mahasiswa->pendaftaran->id))
+                <a href="{{ route('admin.pendaftaran.show', $mahasiswa->pendaftaran->id) }}" class="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">
+                    <i class="fas fa-external-link-alt mr-1"></i> Lihat Detail Pendaftaran
+                </a>
                 @endif
             </div>
 
@@ -153,7 +149,7 @@ Catatan Pengembangan:
                     <div>
                         <h4 class="text-base font-semibold text-gray-900 dark:text-white">{{ $mahasiswa->pendaftaran->lokasi->nama_lokasi }}</h4>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            {{ $mahasiswa->pendaftaran->lokasi->kecamatan }}, {{ $mahasiswa->pendaftaran->lokasi->kabupaten }}, {{ $mahasiswa->pendaftaran->lokasi->provinsi }}
+                            {{ $mahasiswa->pendaftaran->lokasi->kecamatan }}, {{ $mahasiswa->pendaftaran->lokasi->kabupaten }}
                         </p>
                     </div>
                     <div class="mt-2 md:mt-0">
@@ -165,36 +161,45 @@ Catatan Pengembangan:
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                     <div>
-                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Informasi Lokasi</p>
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Data Kesehatan</p>
                         <ul class="text-sm text-gray-600 dark:text-gray-400 mt-2 space-y-1">
                             <li class="flex items-start">
-                                <i class="fas fa-user-tie w-4 h-4 mr-2 mt-0.5 text-gray-500"></i>
-                                <span>Koordinator: {{ $mahasiswa->pendaftaran->lokasi->koordinator }}</span>
+                                <i class="fas fa-heartbeat w-4 h-4 mr-2 mt-0.5 text-gray-500"></i>
+                                <span>Golongan Darah: {{ $mahasiswa->pendaftaran->golongan_darah }}</span>
                             </li>
                             <li class="flex items-start">
-                                <i class="fas fa-phone w-4 h-4 mr-2 mt-0.5 text-gray-500"></i>
-                                <span>Kontak: {{ $mahasiswa->pendaftaran->lokasi->kontak_koordinator }}</span>
-                            </li>
-                            <li class="flex items-start">
-                                <i class="fas fa-bullseye w-4 h-4 mr-2 mt-0.5 text-gray-500"></i>
-                                <span>Fokus Program: {{ $mahasiswa->pendaftaran->lokasi->fokus_program }}</span>
+                                <i class="fas fa-notes-medical w-4 h-4 mr-2 mt-0.5 text-gray-500"></i>
+                                <span>Riwayat Penyakit: {{ $mahasiswa->pendaftaran->riwayat_penyakit ?: 'Tidak ada' }}</span>
                             </li>
                         </ul>
                     </div>
 
                     <div>
-                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Informasi Pendaftaran</p>
-                        <ul class="text-sm text-gray-600 dark:text-gray-400 mt-2 space-y-2">
-                            <li>
-                                <p class="font-medium text-gray-700 dark:text-gray-300">Motivasi:</p>
-                                <p class="mt-1">{{ $mahasiswa->pendaftaran->motivasi ?? '-' }}</p>
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Kontak Darurat</p>
+                        <ul class="text-sm text-gray-600 dark:text-gray-400 mt-2 space-y-1">
+                            <li class="flex items-start">
+                                <i class="fas fa-user w-4 h-4 mr-2 mt-0.5 text-gray-500"></i>
+                                <span>Nama: {{ $mahasiswa->pendaftaran->kontak_darurat_nama ?: '-' }}</span>
                             </li>
-                            <li>
-                                <p class="font-medium text-gray-700 dark:text-gray-300">Rencana Program:</p>
-                                <p class="mt-1">{{ $mahasiswa->pendaftaran->rencana_program ?? '-' }}</p>
+                            <li class="flex items-start">
+                                <i class="fas fa-phone w-4 h-4 mr-2 mt-0.5 text-gray-500"></i>
+                                <span>Telepon: {{ $mahasiswa->pendaftaran->kontak_darurat_telepon ?: '-' }}</span>
                             </li>
                         </ul>
                     </div>
+                </div>
+
+                <div class="mt-4">
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Status Pendaftaran</p>
+                    <p class="mt-1">
+                        @if($mahasiswa->pendaftaran->status == 'terdaftar')
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100">Terdaftar</span>
+                        @elseif($mahasiswa->pendaftaran->status == 'draft')
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-100">Draft</span>
+                        @else
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-100">{{ ucfirst($mahasiswa->pendaftaran->status) }}</span>
+                        @endif
+                    </p>
                 </div>
             </div>
         </div>
@@ -222,7 +227,7 @@ Catatan Pengembangan:
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ $payment->order_id }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">Rp {{ number_format($payment->gross_amount, 0, ',', '.') }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                @if($payment->status == 'settlement')
+                                @if($payment->status == 'sukses')
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100">Sukses</span>
                                 @elseif($payment->status == 'pending')
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-100">Pending</span>
@@ -233,9 +238,9 @@ Catatan Pengembangan:
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ $payment->payment_type ?? '-' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ $payment->created_at->format('d F Y H:i') }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                <button type="button" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-not-allowed" disabled title="Halaman detail pembayaran sedang dalam pengembangan">
+                                <a href="{{ route('admin.payment.show', $payment->id) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
                                     <i class="fas fa-eye"></i> Detail
-                                </button>
+                                </a>
                             </td>
                         </tr>
                         @endforeach

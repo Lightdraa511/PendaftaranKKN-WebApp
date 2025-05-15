@@ -95,6 +95,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/mahasiswa/{id}', [App\Http\Controllers\AdminUserController::class, 'destroy'])->name('mahasiswa.destroy');
         Route::get('/api/program-studi/{fakultas_id}', [App\Http\Controllers\AdminUserController::class, 'getProgramStudi'])->name('program-studi.get');
 
+        // Kelola Fakultas dan Program Studi
+        Route::get('/fakultas', [App\Http\Controllers\AdminFakultasController::class, 'index'])->name('fakultas.index');
+        Route::get('/fakultas/create', [App\Http\Controllers\AdminFakultasController::class, 'create'])->name('fakultas.create');
+        Route::post('/fakultas', [App\Http\Controllers\AdminFakultasController::class, 'store'])->name('fakultas.store');
+        Route::get('/fakultas/{id}', [App\Http\Controllers\AdminFakultasController::class, 'show'])->name('fakultas.show');
+        Route::get('/fakultas/{id}/edit', [App\Http\Controllers\AdminFakultasController::class, 'edit'])->name('fakultas.edit');
+        Route::put('/fakultas/{id}', [App\Http\Controllers\AdminFakultasController::class, 'update'])->name('fakultas.update');
+        Route::delete('/fakultas/{id}', [App\Http\Controllers\AdminFakultasController::class, 'destroy'])->name('fakultas.destroy');
+
+        // Program Studi Routes
+        Route::get('/fakultas/{fakultas_id}/prodi/create', [App\Http\Controllers\AdminFakultasController::class, 'createProdi'])->name('fakultas.prodi.create');
+        Route::post('/fakultas/{fakultas_id}/prodi', [App\Http\Controllers\AdminFakultasController::class, 'storeProdi'])->name('fakultas.prodi.store');
+        Route::get('/fakultas/{fakultas_id}/prodi/{prodi_id}/edit', [App\Http\Controllers\AdminFakultasController::class, 'editProdi'])->name('fakultas.prodi.edit');
+        Route::put('/fakultas/{fakultas_id}/prodi/{prodi_id}', [App\Http\Controllers\AdminFakultasController::class, 'updateProdi'])->name('fakultas.prodi.update');
+        Route::delete('/fakultas/{fakultas_id}/prodi/{prodi_id}', [App\Http\Controllers\AdminFakultasController::class, 'destroyProdi'])->name('fakultas.prodi.destroy');
+
         // Kelola Lokasi KKN
         Route::get('/lokasi', [App\Http\Controllers\AdminLokasiController::class, 'index'])->name('lokasi.index');
         Route::get('/lokasi/create', [App\Http\Controllers\AdminLokasiController::class, 'create'])->name('lokasi.create');
@@ -108,7 +124,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Kelola Pembayaran
         Route::get('/payment', [App\Http\Controllers\AdminPaymentController::class, 'index'])->name('payment.index');
         Route::get('/payment/{id}', [App\Http\Controllers\AdminPaymentController::class, 'show'])->name('payment.show');
-        Route::put('/payment/{id}/verify', [App\Http\Controllers\AdminPaymentController::class, 'verify'])->name('payment.verify');
-        Route::put('/payment/{id}/reject', [App\Http\Controllers\AdminPaymentController::class, 'reject'])->name('payment.reject');
+
+        // Kelola Pendaftaran
+        Route::get('/pendaftaran', [App\Http\Controllers\AdminPendaftaranController::class, 'index'])->name('pendaftaran.index');
+        Route::get('/pendaftaran/{id}', [App\Http\Controllers\AdminPendaftaranController::class, 'show'])->name('pendaftaran.show');
+        Route::get('/pendaftaran/{id}/edit', [App\Http\Controllers\AdminPendaftaranController::class, 'edit'])->name('pendaftaran.edit');
+        Route::put('/pendaftaran/{id}', [App\Http\Controllers\AdminPendaftaranController::class, 'update'])->name('pendaftaran.update');
+        Route::delete('/pendaftaran/{id}', [App\Http\Controllers\AdminPendaftaranController::class, 'destroy'])->name('pendaftaran.destroy');
+
+        // Kelola Pengaturan
+        Route::get('/pengaturan', [App\Http\Controllers\AdminPengaturanController::class, 'index'])->name('pengaturan.index');
+        Route::put('/pengaturan', [App\Http\Controllers\AdminPengaturanController::class, 'update'])->name('pengaturan.update');
+        Route::post('/pengaturan/reset', [App\Http\Controllers\AdminPengaturanController::class, 'reset'])->name('pengaturan.reset');
     });
 });

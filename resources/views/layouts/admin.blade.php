@@ -181,8 +181,9 @@
                         </a>
 
                         <!-- Pendaftaran -->
-                        <a href="#"
-                           class="nav-link group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <a href="{{ route('admin.pendaftaran.index') }}"
+                           class="nav-link group flex items-center px-2 py-2 text-sm font-medium rounded-md
+                                 {{ request()->routeIs('admin.pendaftaran.*') ? 'active-nav-link' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
                             <i class="fas fa-clipboard-list mr-3 text-gray-500 dark:text-gray-400"></i>
                             Pendaftaran
                         </a>
@@ -196,15 +197,17 @@
                         </a>
 
                         <!-- Fakultas & Prodi -->
-                        <a href="#"
-                           class="nav-link group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <a href="{{ route('admin.fakultas.index') }}"
+                           class="nav-link group flex items-center px-2 py-2 text-sm font-medium rounded-md
+                                 {{ request()->routeIs('admin.fakultas.*') ? 'active-nav-link' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
                             <i class="fas fa-university mr-3 text-gray-500 dark:text-gray-400"></i>
                             Fakultas & Prodi
                         </a>
 
                         <!-- Pengaturan -->
-                        <a href="#"
-                           class="nav-link group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <a href="{{ route('admin.pengaturan.index') }}"
+                           class="nav-link group flex items-center px-2 py-2 text-sm font-medium rounded-md
+                                 {{ request()->routeIs('admin.pengaturan.*') ? 'active-nav-link' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
                             <i class="fas fa-cog mr-3 text-gray-500 dark:text-gray-400"></i>
                             Pengaturan
                         </a>
@@ -277,10 +280,10 @@
                     <a href="{{ route('admin.dashboard') }}" class="block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('admin.dashboard') ? 'text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">Dashboard</a>
                     <a href="{{ route('admin.mahasiswa.index') }}" class="block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('admin.mahasiswa.*') ? 'text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">Mahasiswa</a>
                     <a href="{{ route('admin.lokasi.index') }}" class="block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('admin.lokasi.*') ? 'text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">Lokasi KKN</a>
-                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Pendaftaran</a>
+                    <a href="{{ route('admin.pendaftaran.index') }}" class="block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('admin.pendaftaran.*') ? 'text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">Pendaftaran</a>
                     <a href="{{ route('admin.payment.index') }}" class="block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('admin.payment.*') ? 'text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">Pembayaran</a>
-                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Fakultas & Prodi</a>
-                    <a href="#" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Pengaturan</a>
+                    <a href="{{ route('admin.fakultas.index') }}" class="block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('admin.fakultas.*') ? 'text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">Fakultas & Prodi</a>
+                    <a href="{{ route('admin.pengaturan.index') }}" class="block px-3 py-2 rounded-md text-base font-medium {{ request()->routeIs('admin.pengaturan.*') ? 'text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">Pengaturan</a>
                 </nav>
             </div>
 

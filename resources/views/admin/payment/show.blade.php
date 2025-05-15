@@ -49,21 +49,15 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">ID Transaksi</p>
-                            <p class="text-base text-gray-900 dark:text-white">{{ $pembayaran->order_id }}</p>
+                            <p class="text-base text-gray-900 dark:text-white">{{ $pembayaran->id_pembayaran }}</p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
                             <p class="mt-1">
-                                @if($pembayaran->status == 'settlement')
+                                @if($pembayaran->status == 'sukses')
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100">Sukses</span>
                                 @elseif($pembayaran->status == 'pending')
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-100">Pending</span>
-                                @elseif($pembayaran->status == 'deny')
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100">Ditolak</span>
-                                @elseif($pembayaran->status == 'cancel')
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-100">Dibatalkan</span>
-                                @elseif($pembayaran->status == 'expire')
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-100">Kedaluwarsa</span>
                                 @else
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-100">{{ ucfirst($pembayaran->status) }}</span>
                                 @endif
@@ -71,7 +65,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Jumlah Pembayaran</p>
-                            <p class="text-base text-gray-900 dark:text-white font-semibold">Rp {{ number_format($pembayaran->gross_amount, 0, ',', '.') }}</p>
+                            <p class="text-base text-gray-900 dark:text-white font-semibold">Rp {{ number_format($pembayaran->total_pembayaran, 0, ',', '.') }}</p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Tanggal Pembayaran</p>
@@ -79,14 +73,10 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Metode Pembayaran</p>
-                            <p class="text-base text-gray-900 dark:text-white">{{ ucfirst($pembayaran->payment_type ?? '-') }}</p>
-                            @if($pembayaran->payment_type == 'bank_transfer')
-                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ strtoupper($pembayaran->bank ?? '') }}</p>
+                            <p class="text-base text-gray-900 dark:text-white">{{ ucfirst($pembayaran->midtrans_payment_type ?? '-') }}</p>
+                            @if($pembayaran->midtrans_payment_type == 'bank_transfer')
+                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ strtoupper($pembayaran->midtrans_bank ?? '') }}</p>
                             @endif
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Virtual Account/Kode</p>
-                            <p class="text-base text-gray-900 dark:text-white">{{ $pembayaran->va_number ?? $pembayaran->payment_code ?? '-' }}</p>
                         </div>
                     </div>
                 </div>
@@ -103,57 +93,14 @@
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Update Terakhir</p>
                             <p class="text-base text-gray-900 dark:text-white">{{ $pembayaran->updated_at->format('d F Y H:i') }}</p>
                         </div>
-                        @if($pembayaran->settlement_time)
+                        @if($pembayaran->tanggal_bayar)
                         <div>
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Tanggal Pembayaran</p>
-                            <p class="text-base text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($pembayaran->settlement_time)->format('d F Y H:i') }}</p>
-                        </div>
-                        @endif
-                        @if($pembayaran->verified_at)
-                        <div>
-                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Diverifikasi Pada</p>
-                            <p class="text-base text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($pembayaran->verified_at)->format('d F Y H:i') }}</p>
+                            <p class="text-base text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($pembayaran->tanggal_bayar)->format('d F Y H:i') }}</p>
                         </div>
                         @endif
                     </div>
                 </div>
-
-                @if($pembayaran->notes)
-                <!-- Catatan -->
-                <div class="mb-6 border-t border-gray-200 dark:border-gray-600 pt-4">
-                    <h4 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-2">Catatan</h4>
-                    <p class="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 p-3 rounded">{{ $pembayaran->notes }}</p>
-                </div>
-                @endif
-
-                <!-- Aksi -->
-                @if($pembayaran->status == 'pending')
-                <div class="mb-4 border-t border-gray-200 dark:border-gray-600 pt-4 flex flex-col md:flex-row gap-4">
-                    <form action="{{ route('admin.payment.verify', $pembayaran->id) }}" method="POST" class="flex-1">
-                        @csrf
-                        @method('PUT')
-                        <div class="mb-3">
-                            <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catatan (opsional)</label>
-                            <textarea name="notes" id="notes" rows="2" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"></textarea>
-                        </div>
-                        <button type="submit" class="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">
-                            <i class="fas fa-check-circle mr-2"></i> Verifikasi Pembayaran
-                        </button>
-                    </form>
-
-                    <form action="{{ route('admin.payment.reject', $pembayaran->id) }}" method="POST" class="flex-1">
-                        @csrf
-                        @method('PUT')
-                        <div class="mb-3">
-                            <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alasan Penolakan <span class="text-red-500">*</span></label>
-                            <textarea name="notes" id="notes" rows="2" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white" required></textarea>
-                        </div>
-                        <button type="submit" class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md">
-                            <i class="fas fa-times-circle mr-2"></i> Tolak Pembayaran
-                        </button>
-                    </form>
-                </div>
-                @endif
             </div>
 
             <!-- Informasi Mahasiswa -->
