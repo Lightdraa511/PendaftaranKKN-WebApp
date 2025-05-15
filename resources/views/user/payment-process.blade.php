@@ -82,7 +82,7 @@
         });
       });
 
-      // Otomatis klik tombol bayar
+      // Otomatis klik tombol bayar setelah 1 detik
       setTimeout(function() {
         payButton.click();
       }, 1000);

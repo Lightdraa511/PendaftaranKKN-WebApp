@@ -43,7 +43,7 @@ class AdminPaymentController extends Controller
      */
     public function show($id)
     {
-        $pembayaran = Pembayaran::with('user')->findOrFail($id);
+        $pembayaran = Pembayaran::with(['user.fakultas', 'user.programStudi'])->findOrFail($id);
         return view('admin.payment.show', compact('pembayaran'));
     }
 }

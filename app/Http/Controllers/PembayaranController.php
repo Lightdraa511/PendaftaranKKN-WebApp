@@ -25,10 +25,42 @@ class PembayaranController extends Controller
     }
 
     // Tampilkan halaman pembayaran
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $pengaturan = Pengaturan::getCurrent();
+
+        // Cek jika ada status close dari halaman pembayaran (user keluar dari jendela pembayaran)
+        if ($request->status == 'close' || $request->status == 'error') {
+            // Cari pembayaran pending terakhir dan hapus karena user batal bayar
+            $lastPendingPayment = Pembayaran::where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($lastPendingPayment) {
+                $lastPendingPayment->delete();
+
+                if ($request->status == 'close') {
+                    return redirect()->route('pembayaran.index')
+                        ->with('info', 'Pembayaran dibatalkan. Anda dapat mencoba kembali kapan saja.');
+                } else {
+                    return redirect()->route('pembayaran.index')
+                        ->with('error', 'Pembayaran gagal. Silakan coba lagi.');
+                }
+            }
+        }
+
+        // Hapus pembayaran pending yang sudah lama (lebih dari 1 jam)
+        $oldPendingPayments = Pembayaran::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->where('created_at', '<', now()->subHour())
+            ->get();
+
+        foreach ($oldPendingPayments as $oldPayment) {
+            $oldPayment->delete();
+        }
+
         $riwayatPembayaran = Pembayaran::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -46,6 +78,15 @@ class PembayaranController extends Controller
         if ($user->status_pembayaran === 'lunas') {
             return redirect()->route('pembayaran.index')
                 ->with('info', 'Anda sudah melakukan pembayaran');
+        }
+
+        // Hapus pembayaran pending sebelumnya jika ada
+        $pendingPayments = Pembayaran::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->get();
+
+        foreach ($pendingPayments as $pendingPayment) {
+            $pendingPayment->delete();
         }
 
         // Hitung total pembayaran
@@ -97,6 +138,9 @@ class PembayaranController extends Controller
             // Tampilkan halaman dengan snap token
             return view('user.payment-process', compact('snapToken', 'pembayaran'));
         } catch (\Exception $e) {
+            // Rollback - hapus pembayaran jika terjadi error
+            $pembayaran->delete();
+
             Log::error('Midtrans Error: ' . $e->getMessage());
             return redirect()->route('pembayaran.index')
                 ->with('error', 'Terjadi kesalahan saat memproses pembayaran. Silahkan coba lagi.');
@@ -108,20 +152,31 @@ class PembayaranController extends Controller
     {
         $orderId = $request->order_id;
         $pembayaran = Pembayaran::where('id_pembayaran', $orderId)->firstOrFail();
+        $status_param = $request->status;
 
         try {
             // Cek status transaksi di Midtrans
-            $status = Transaction::status($orderId);
+            $midtransStatus = Transaction::status($orderId);
 
             // Update pembayaran berdasarkan status dari Midtrans
-            if ($status) {
-                $pembayaran->midtrans_payment_type = $status->payment_type ?? null;
+            if ($midtransStatus) {
+                // Dapatkan payment_type dari hasil midtrans
+                $pembayaran->midtrans_payment_type = isset($midtransStatus->payment_type) ?
+                    $midtransStatus->payment_type : null;
 
-                if (isset($status->va_numbers[0]->bank)) {
-                    $pembayaran->midtrans_bank = $status->va_numbers[0]->bank;
+                // Cek dan ambil bank jika ada
+                if (isset($midtransStatus->va_numbers) &&
+                    is_array($midtransStatus->va_numbers) &&
+                    !empty($midtransStatus->va_numbers) &&
+                    isset($midtransStatus->va_numbers[0]->bank)) {
+                    $pembayaran->midtrans_bank = $midtransStatus->va_numbers[0]->bank;
                 }
 
-                if ($status->transaction_status == 'settlement' || $status->transaction_status == 'capture') {
+                // Cek transaction_status
+                $transactionStatus = isset($midtransStatus->transaction_status) ?
+                    $midtransStatus->transaction_status : null;
+
+                if ($transactionStatus == 'settlement' || $transactionStatus == 'capture') {
                     $pembayaran->status = 'sukses';
                     $pembayaran->tanggal_bayar = now();
 
@@ -135,26 +190,79 @@ class PembayaranController extends Controller
 
                     return redirect()->route('pembayaran.index')
                         ->with('success', 'Pembayaran berhasil! Status pembayaran Anda telah diperbarui.');
-                } else if ($status->transaction_status == 'pending') {
+                }
+                elseif ($transactionStatus == 'pending') {
                     $pembayaran->status = 'pending';
+                    $pembayaran->save();
 
                     return redirect()->route('pembayaran.index')
                         ->with('info', 'Pembayaran sedang diproses. Silakan cek status pembayaran Anda nanti.');
-                } else {
-                    // Karena enum status hanya menerima 'pending' atau 'sukses'
-                    $pembayaran->status = 'pending';
+                }
+                else {
+                    // Rollback - hapus pembayaran jika gagal
+                    $pembayaran->delete();
 
                     return redirect()->route('pembayaran.index')
                         ->with('error', 'Pembayaran gagal. Silakan coba lagi.');
                 }
+            }
+            else {
+                // Jika tidak bisa mendapatkan status dari midtrans, gunakan parameter dari callback
+                if ($status_param == 'success') {
+                    $pembayaran->status = 'sukses';
+                    $pembayaran->tanggal_bayar = now();
 
-                $pembayaran->save();
+                    // Update status pembayaran di user
+                    $user = $pembayaran->user;
+                    $user->status_pembayaran = 'lunas';
+                    $user->save();
+
+                    $pembayaran->save();
+
+                    return redirect()->route('pembayaran.index')
+                        ->with('success', 'Pembayaran berhasil! Status pembayaran Anda telah diperbarui.');
+                }
+                elseif ($status_param == 'error') {
+                    // Rollback - hapus pembayaran jika gagal
+                    $pembayaran->delete();
+
+                    return redirect()->route('pembayaran.index')
+                        ->with('error', 'Pembayaran gagal. Silakan coba lagi.');
+                }
+                else {
+                    return redirect()->route('pembayaran.index')
+                        ->with('info', 'Pembayaran sedang diproses. Silakan cek status pembayaran Anda nanti.');
+                }
             }
         } catch (\Exception $e) {
             Log::error('Midtrans Status Error: ' . $e->getMessage());
+
+            // Jika error, gunakan parameter dari URL sebagai fallback
+            if ($status_param == 'success') {
+                $pembayaran->status = 'sukses';
+                $pembayaran->tanggal_bayar = now();
+
+                // Update status pembayaran di user
+                $user = $pembayaran->user;
+                $user->status_pembayaran = 'lunas';
+                $user->save();
+
+                $pembayaran->save();
+
+                return redirect()->route('pembayaran.index')
+                    ->with('success', 'Pembayaran berhasil! Status pembayaran Anda telah diperbarui.');
+            }
+            elseif ($status_param == 'error') {
+                // Rollback - hapus pembayaran jika gagal
+                $pembayaran->delete();
+
+                return redirect()->route('pembayaran.index')
+                    ->with('error', 'Pembayaran gagal. Silakan coba lagi.');
+            }
         }
 
-        return redirect()->route('pembayaran.index');
+        return redirect()->route('pembayaran.index')
+            ->with('info', 'Pembayaran sedang diproses. Silakan cek status pembayaran Anda nanti.');
     }
 
     // Cek status pembayaran
@@ -168,17 +276,27 @@ class PembayaranController extends Controller
 
         try {
             // Cek status transaksi di Midtrans
-            $status = Transaction::status($pembayaran->id_pembayaran);
+            $midtransStatus = Transaction::status($pembayaran->id_pembayaran);
 
             // Update pembayaran berdasarkan status dari Midtrans
-            if ($status) {
-                $pembayaran->midtrans_payment_type = $status->payment_type ?? null;
+            if ($midtransStatus) {
+                // Dapatkan payment_type dari hasil midtrans
+                $pembayaran->midtrans_payment_type = isset($midtransStatus->payment_type) ?
+                    $midtransStatus->payment_type : null;
 
-                if (isset($status->va_numbers[0]->bank)) {
-                    $pembayaran->midtrans_bank = $status->va_numbers[0]->bank;
+                // Cek dan ambil bank jika ada
+                if (isset($midtransStatus->va_numbers) &&
+                    is_array($midtransStatus->va_numbers) &&
+                    !empty($midtransStatus->va_numbers) &&
+                    isset($midtransStatus->va_numbers[0]->bank)) {
+                    $pembayaran->midtrans_bank = $midtransStatus->va_numbers[0]->bank;
                 }
 
-                if ($status->transaction_status == 'settlement' || $status->transaction_status == 'capture') {
+                // Cek transaction_status
+                $transactionStatus = isset($midtransStatus->transaction_status) ?
+                    $midtransStatus->transaction_status : null;
+
+                if ($transactionStatus == 'settlement' || $transactionStatus == 'capture') {
                     $pembayaran->status = 'sukses';
                     $pembayaran->tanggal_bayar = now();
 
@@ -192,26 +310,39 @@ class PembayaranController extends Controller
 
                     return redirect()->route('pembayaran.index')
                         ->with('success', 'Pembayaran berhasil! Status pembayaran Anda telah diperbarui.');
-                } else if ($status->transaction_status == 'pending') {
+                }
+                elseif ($transactionStatus == 'pending') {
                     $pembayaran->status = 'pending';
+                    $pembayaran->save();
 
                     return redirect()->route('pembayaran.index')
                         ->with('info', 'Pembayaran sedang diproses. Silakan cek status pembayaran Anda nanti.');
-                } else {
-                    // Karena enum status hanya menerima 'pending' atau 'sukses'
-                    $pembayaran->status = 'pending';
+                }
+                else {
+                    // Rollback - hapus pembayaran jika gagal
+                    $pembayaran->delete();
 
                     return redirect()->route('pembayaran.index')
                         ->with('error', 'Pembayaran gagal. Silakan coba lagi.');
                 }
+            }
+            else {
+                // Pembayaran terlalu lama pending (lebih dari 1 jam) dianggap gagal
+                if ($pembayaran->created_at->diffInHours(now()) > 1) {
+                    $pembayaran->delete();
 
-                $pembayaran->save();
+                    return redirect()->route('pembayaran.index')
+                        ->with('error', 'Pembayaran telah kedaluarsa. Silakan coba lagi.');
+                }
             }
         } catch (\Exception $e) {
             Log::error('Midtrans Status Error: ' . $e->getMessage());
             return redirect()->route('pembayaran.index')
                 ->with('error', 'Terjadi kesalahan saat memeriksa status pembayaran.');
         }
+
+        return redirect()->route('pembayaran.index')
+            ->with('info', 'Status pembayaran belum berubah. Silakan coba lagi nanti.');
     }
 
     // Generate ID Pembayaran

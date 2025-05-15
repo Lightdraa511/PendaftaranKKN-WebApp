@@ -22,6 +22,10 @@ class Pembayaran extends Model
         'tanggal_bayar',
     ];
 
+    protected $casts = [
+        'tanggal_bayar' => 'datetime',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

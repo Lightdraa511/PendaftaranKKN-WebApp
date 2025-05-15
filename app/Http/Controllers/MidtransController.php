@@ -52,13 +52,19 @@ class MidtransController extends Controller
                         $user->status_pembayaran = 'lunas';
                         $user->save();
                     }
-                } else if ($transaction_status == 'pending') {
-                    $pembayaran->status = 'pending';
-                } else {
-                    $pembayaran->status = 'gagal';
-                }
 
-                $pembayaran->save();
+                    $pembayaran->save();
+                }
+                elseif ($transaction_status == 'pending') {
+                    $pembayaran->status = 'pending';
+                    $pembayaran->save();
+                }
+                else {
+                    // Hapus pembayaran jika status selain sukses atau pending (gagal, expire, cancel, dll)
+                    $pembayaran->delete();
+
+                    return response()->json(['success' => true, 'message' => 'Pembayaran gagal dan telah dihapus']);
+                }
 
                 return response()->json(['success' => true]);
             }

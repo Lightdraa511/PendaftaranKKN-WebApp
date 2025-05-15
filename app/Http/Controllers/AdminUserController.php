@@ -38,6 +38,9 @@ class AdminUserController extends Controller
             $query->where('status_pendaftaran', $request->status_pendaftaran);
         }
 
+        // Urutkan berdasarkan created_at terbaru
+        $query->orderBy('created_at', 'desc');
+
         $mahasiswa = $query->paginate(10);
         $fakultas = Fakultas::all();
 
@@ -92,8 +95,14 @@ class AdminUserController extends Controller
      */
     public function show($id)
     {
-        $mahasiswa = User::with(['fakultas', 'programStudi', 'pendaftaran.lokasi', 'pembayaran'])
-            ->findOrFail($id);
+        $mahasiswa = User::with([
+            'fakultas',
+            'programStudi',
+            'pendaftaran.lokasi',
+            'pembayaran' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }
+        ])->findOrFail($id);
 
         return view('admin.mahasiswa.show', compact('mahasiswa'));
     }

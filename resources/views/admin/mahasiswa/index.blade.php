@@ -40,6 +40,7 @@
                     <select name="status_pendaftaran" id="status_pendaftaran" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white">
                         <option value="">Semua Status</option>
                         <option value="belum" {{ request('status_pendaftaran') == 'belum' ? 'selected' : '' }}>Belum Mendaftar</option>
+                        <option value="sudah" {{ request('status_pendaftaran') == 'sudah' ? 'selected' : '' }}>Sudah Mendaftar</option>
                         <option value="menunggu" {{ request('status_pendaftaran') == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
                         <option value="diterima" {{ request('status_pendaftaran') == 'diterima' ? 'selected' : '' }}>Diterima</option>
                         <option value="ditolak" {{ request('status_pendaftaran') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
@@ -84,6 +85,8 @@
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100">Ditolak</span>
                                 @elseif($mhs->status_pendaftaran == 'menunggu')
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-100">Menunggu</span>
+                                @elseif($mhs->status_pendaftaran == 'sudah')
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100">Sudah Mendaftar</span>
                                 @else
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-100">Belum Mendaftar</span>
                                 @endif
